@@ -50,6 +50,7 @@ with st.form("Add Employee"):
         if emp_name and emp_salary and emp_joining_date:
             add_employee(emp_name, emp_salary, emp_joining_date.strftime("%Y-%m-%d"))
             st.success(f"Added employee: {emp_name}")
+            st.experimental_rerun()  # Refresh to show added employee
         else:
             st.error("Please fill in all fields.")
 
@@ -83,10 +84,10 @@ for index, row in employee_df.iterrows():
             update_employee(row['ID'], emp_name, emp_salary, emp_joining_date.strftime("%Y-%m-%d"))
             st.success(f"Updated employee: {emp_name}")
             st.session_state[f"edit_mode_{row['ID']}"] = False  # Exit edit mode after save
-            st.experimental_rerun()  # Refresh the app to show updated data
+            st.experimental_rerun()  # Refresh to show updated data
 
     # Delete Button
     if st.button(f"Delete {row['Name']}", key=f"delete_{row['ID']}"):
         delete_employee(row['ID'])
         st.warning(f"Deleted employee: {row['Name']}")
-        st.experimental_rerun()  # Refresh the app to show updated data
+        st.experimental_rerun()  # Refresh to show updated data
