@@ -3,6 +3,10 @@ import sqlite3
 from datetime import datetime
 import pandas as pd
 
+# Initialize session state for data updates if not already present
+if "data_updated" not in st.session_state:
+    st.session_state["data_updated"] = False
+
 # Database functions
 def create_employee_table():
     with sqlite3.connect('employees.db') as conn:
@@ -55,7 +59,7 @@ with st.form("Add Employee"):
             st.error("Please fill in all fields.")
 
 # Check if data was updated and reset the flag
-if "data_updated" in st.session_state and st.session_state["data_updated"]:
+if st.session_state["data_updated"]:
     employees = get_all_employees()
     st.session_state["data_updated"] = False
 else:
