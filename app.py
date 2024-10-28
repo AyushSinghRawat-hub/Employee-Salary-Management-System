@@ -50,14 +50,19 @@ with st.form("Add Employee"):
         if emp_name and emp_salary and emp_joining_date:
             add_employee(emp_name, emp_salary, emp_joining_date.strftime("%Y-%m-%d"))
             st.success(f"Added employee: {emp_name}")
-            st.experimental_rerun()  # Refresh to show added employee
+            st.session_state["data_updated"] = True  # Trigger data reload
         else:
             st.error("Please fill in all fields.")
 
+# Check if data was updated and reset the flag
+if "data_updated" in st.session_state and st.session_state["data_updated"]:
+    employees = get_all_employees()
+    st.session_state["data_updated"] = False
+else:
+    employees = get_all_employees()
+
 # Display all employees in a table with edit and delete options
 st.subheader("Employee List")
-
-employees = get_all_employees()
 employee_df = pd.DataFrame(employees, columns=["ID", "Name", "Salary", "Joining Date"])
 st.table(employee_df)  # Display the DataFrame as a table
 
@@ -84,10 +89,10 @@ for index, row in employee_df.iterrows():
             update_employee(row['ID'], emp_name, emp_salary, emp_joining_date.strftime("%Y-%m-%d"))
             st.success(f"Updated employee: {emp_name}")
             st.session_state[f"edit_mode_{row['ID']}"] = False  # Exit edit mode after save
-            st.experimental_rerun()  # Refresh to show updated data
+            st.session_state["data_updated"] = True  # Trigger data reload
 
     # Delete Button
     if st.button(f"Delete {row['Name']}", key=f"delete_{row['ID']}"):
         delete_employee(row['ID'])
         st.warning(f"Deleted employee: {row['Name']}")
-        st.experimental_rerun()  # Refresh to show updated data
+        st.session_state["data_updated"] = True  # Trigger data reload
