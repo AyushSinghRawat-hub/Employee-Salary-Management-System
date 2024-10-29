@@ -65,38 +65,60 @@ if st.session_state["data_updated"]:
 else:
     employees = get_all_employees()
 
-# Display all employees in a table with edit and delete options
+# Add custom CSS for smaller buttons
+st.markdown("""
+    <style>
+    .small-button {
+        font-size: 10px;
+        padding: 3px 8px;
+        margin: 0px 2px;
+    }
+    .button-container {
+        display: flex;
+        gap: 5px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Convert employee data to DataFrame and add Action buttons
 st.subheader("Employee List")
 employee_df = pd.DataFrame(employees, columns=["ID", "Name", "Salary", "Joining Date"])
-st.table(employee_df)  # Display the DataFrame as a table
 
-# Edit/Delete functionality
+# Add actions for each row in the table
 for index, row in employee_df.iterrows():
-    st.write(f"**Employee ID:** {row['ID']} | **Name:** {row['Name']} | **Salary:** {row['Salary']} | **Joining Date:** {row['Joining Date']}")
+    col1, col2, col3, col4, col5 = st.columns([1, 2, 2, 2, 2])
+    with col1:
+        st.write(row["ID"])
+    with col2:
+        st.write(row["Name"])
+    with col3:
+        st.write(f"${row['Salary']:.2f}")
+    with col4:
+        st.write(row["Joining Date"])
+    with col5:
+        # Arrange Edit and Delete buttons in a single row
+        edit_col, delete_col = st.columns(2)
+        
+        # Edit button with icon label
+        edit_label = f"🖉"
+        delete_label = f"🗑️"
+        
+        if edit_col.button(edit_label, key=f"edit_{row['ID']}"):
+            st.session_state[f"edit_mode_{row['ID']}"] = True
+        if delete_col.button(delete_label, key=f"delete_{row['ID']}"):
+            delete_employee(row['ID'])
+            st.warning(f"Deleted employee: {row['Name']}")
+            st.session_state["data_updated"] = True
 
-    # Initializing session state to track edit mode for each employee
-    if f"edit_mode_{row['ID']}" not in st.session_state:
-        st.session_state[f"edit_mode_{row['ID']}"] = False
+    # Edit fields within an expander if in edit mode
+    if st.session_state.get(f"edit_mode_{row['ID']}", False):
+        with st.expander(f"Edit Employee ID: {row['ID']}"):
+            new_name = st.text_input("Name", value=row["Name"], key=f"name_{row['ID']}")
+            new_salary = st.number_input("Salary", value=row["Salary"], key=f"salary_{row['ID']}")
+            new_joining_date = st.date_input("Joining Date", datetime.strptime(row["Joining Date"], "%Y-%m-%d"), key=f"joining_{row['ID']}")
 
-    # Toggle edit mode when edit button is clicked
-    if st.button(f"Edit {row['Name']}", key=f"edit_{row['ID']}"):
-        st.session_state[f"edit_mode_{row['ID']}"] = not st.session_state[f"edit_mode_{row['ID']}"]
-    
-    # Display editable fields if in edit mode
-    if st.session_state[f"edit_mode_{row['ID']}"]:
-        emp_name = st.text_input("Update Name", value=row['Name'], key=f"upd_name_{row['ID']}")
-        emp_salary = st.number_input("Update Salary", value=row['Salary'], min_value=0.0, key=f"upd_salary_{row['ID']}")
-        emp_joining_date = st.date_input("Update Joining Date", datetime.strptime(row['Joining Date'], "%Y-%m-%d"), key=f"upd_date_{row['ID']}")
-
-        # Save changes
-        if st.button(f"Save Changes for {row['Name']}", key=f"save_{row['ID']}"):
-            update_employee(row['ID'], emp_name, emp_salary, emp_joining_date.strftime("%Y-%m-%d"))
-            st.success(f"Updated employee: {emp_name}")
-            st.session_state[f"edit_mode_{row['ID']}"] = False  # Exit edit mode after save
-            st.session_state["data_updated"] = True  # Trigger data reload
-
-    # Delete Button
-    if st.button(f"Delete {row['Name']}", key=f"delete_{row['ID']}"):
-        delete_employee(row['ID'])
-        st.warning(f"Deleted employee: {row['Name']}")
-        st.session_state["data_updated"] = True  # Trigger data reload
+            if st.button("Save Changes", key=f"save_{row['ID']}"):
+                update_employee(row['ID'], new_name, new_salary, new_joining_date.strftime("%Y-%m-%d"))
+                st.success(f"Updated employee: {new_name}")
+                st.session_state[f"edit_mode_{row['ID']}"] = False  # Exit edit mode
+                st.session_state["data_updated"] = True  # Trigger data reload
